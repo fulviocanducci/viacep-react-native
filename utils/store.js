@@ -38,6 +38,19 @@ const store = {
       if (error) console.log(error);
     });
   },
+  removeItem: async value => {
+    const datas = await AsyncStorage.getItem(configurations.nameStorage);
+    let items = datas === null ? [] : JSON.parse(datas);
+    items = items.filter(x => x.cep !== value);
+    await AsyncStorage.removeItem(configurations.nameStorage);
+    await AsyncStorage.setItem(
+      configurations.nameStorage,
+      JSON.stringify(items),
+      error => {
+        if (!error) console.log('Error excluded ...');
+      }
+    );
+  },
   find: async value => {
     const datas = await AsyncStorage.getItem(configurations.nameStorage);
     let items = datas === null ? [] : JSON.parse(datas);
