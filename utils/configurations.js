@@ -1,2 +1,4 @@
-const nameStorage = 'viacep.items';
-export { nameStorage };
+const configurations = {
+  nameStorage: 'viacep.items'
+};
+export default configurations;

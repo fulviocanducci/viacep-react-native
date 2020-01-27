@@ -1,15 +1,16 @@
-import React from 'react';
 import { createStackNavigator } from 'react-navigation-stack';
-import History from '../../screens/History';
+import History from '../../screens/History/index';
+import Viewer from '../../screens/History/viewer';
 
 const HistoryStack = createStackNavigator(
   {
-    Histórico: History
+    Histórico: History,
+    Visualizar: Viewer
   },
   {
     defaultNavigationOptions: {
-      headerTitle: 'Histórico de Busca',
-      title: 'Histórico de Busca'
+      headerTitle: 'Histórico',
+      title: 'Histórico'
     }
   }
 );

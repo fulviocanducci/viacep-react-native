@@ -1,129 +1,92 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Keyboard,
-  FlatList,
-  ScrollView,
-  AsyncStorage,
-  SafeAreaView
-} from 'react-native';
-import { SearchBar, Button, ListItem } from 'react-native-elements';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-import { nameStorage } from '../../utils/configurations';
+import { View, Keyboard, SafeAreaView, StyleSheet, Alert } from 'react-native';
 
-function Home({ navigation }) {
+import {
+  FlatListZipCode,
+  ButtonZipCode,
+  SearchBarZipCode
+} from '../../components';
+
+import { store, service } from '../../utils';
+
+function Home() {
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState([]);
 
   async function loadZipCodeAsync() {
-    setResult([]);
-    Keyboard.dismiss();
-    const source = await fetch(`https://viacep.com.br/ws/${value}/json/`);
-    const result = await source.json();
-    const data = [];
-    Object.keys(result).map(x => {
-      if (result[x] && result[x] !== '') {
-        data.push({ item: x, value: result[x] });
+    if (validate()) {
+      setResult([]);
+      Keyboard.dismiss();
+      const { data, result, status } = await service.get(value);
+      setLoading(false);
+      if (status) {
+        setResult(data);
+        store.add(result);
+      } else {
+        Alert.alert('Error', 'Código postal digitado inválido');
       }
-    });
-    setLoading(false);
-    setResult(data);
-    await saveAsyncStoreAdd(result);
+    } else {
+      Alert.alert('Error', 'Digite o Código postal correto');
+      setLoading(false);
+    }
+  }
+
+  function validate() {
+    var er = /[0-9]/;
+    return value && value.length === 8 && er.test(value);
   }
 
   function handlerClear() {
     setResult([]);
   }
 
-  async function saveAsyncStoreAdd(item) {
-    const datas = await AsyncStorage.getItem(nameStorage);
-    let items = datas === null ? [] : JSON.parse(datas);
-    if (items.filter(x => x.cep === item.cep).length === 0) {
-      items = [...items, item];
+  function handlerKeyPress(e) {
+    if (e.nativeEvent.key === 'Backspace' && value.length >= 0) {
+      setResult([]);
     }
-    await AsyncStorage.setItem(nameStorage, JSON.stringify(items), error => {
-      if (error) console.log(error);
-    });
+  }
+
+  function handlerButton() {
+    setLoading(true);
+    loadZipCodeAsync();
   }
 
   useEffect(() => {
-    AsyncStorage.getItem(nameStorage, error => {
-      if (error) {
-        AsyncStorage.setItem(nameStorage, JSON.stringify([]), error =>
-          console.log('Initialize Storage ...')
-        );
-      }
-    });
+    store.init();
   }, []);
 
-  function render({ item }) {
-    return (
-      <ListItem
-        height={50}
-        key={item.value}
-        title={item.value}
-        subtitle={item.item}
-        leftIcon={<FontAwesome5 name="angle-double-right" />}
-        marginBottom={9}
-      />
-    );
-  }
-
   return (
-    <View style={{ backgroundColor: '#fff', flex: 1 }}>
+    <View style={styles.container}>
       <View>
-        <SearchBar
-          onChangeText={e => setValue(e)}
+        <SearchBarZipCode
+          onChangeText={setValue}
           onClear={handlerClear}
-          placeholder="Código postal ..."
-          inputStyle={''}
-          lightTheme={true}
-          showLoadingIcon={true}
-          round={true}
           value={value}
-          maxLength={8}
-          keyboardType={'numeric'}
-          onKeyPress={e => {
-            if (e.nativeEvent.key === 'Backspace' && value.length >= 0) {
-              setResult([]);
-            }
-          }}
-          autoCapitalize="none"
-          autoCorrect={false}
+          onKeyPress={handlerKeyPress}
         />
       </View>
-      <View style={{ margin: 10 }}>
-        <Button
-          onPress={() => {
-            setLoading(true);
-            loadZipCodeAsync();
-          }}
-          raised
-          icon={{ name: 'search', color: '#fff' }}
-          title="Buscar"
-          style={{ height: 100 }}
-          loading={loading}
-        />
+      <View style={styles.buttonContainer}>
+        <ButtonZipCode onPress={handlerButton} loading={loading} />
       </View>
-      <SafeAreaView style={{ flex: 1 }}>
-        <FlatList
-          ItemSeparatorComponent={() => (
-            <View style={{ borderTopWidth: 1, borderColor: '#c1c1c1' }} />
-          )}
-          keyExtractor={(item, index) => index.toString()}
-          data={result}
-          renderItem={render}
-        />
+      <SafeAreaView style={styles.safeAreViewContainer}>
+        <FlatListZipCode result={result} />
       </SafeAreaView>
-      <Button
-        title="c"
-        onPress={() =>
-          navigation.navigate('Histórico', { d: new Date().getTime() })
-        }
-      ></Button>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#fff',
+    flex: 1
+  },
+  buttonContainer: {
+    margin: 10
+  },
+  safeAreViewContainer: {
+    flex: 1
+  }
+});
 
 export default Home;

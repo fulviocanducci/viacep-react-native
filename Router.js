@@ -15,6 +15,7 @@ const TabNavigator = createBottomTabNavigator(
       tabBarIcon: ({ focused, tintColor }) => {
         const { routeName } = navigation.state;
         let iconName;
+        console.log(routeName);
         if (routeName === 'Busca') {
           //iconName = focused ? 'search' : 'adobe';
           iconName = 'search';
@@ -31,6 +32,17 @@ const TabNavigator = createBottomTabNavigator(
     }
   }
 );
+
+TabNavigator.navigationOptions = ({ navigation }) => {
+  const { routeName } = navigation.state.routes[navigation.state.index];
+  console.log(routeName);
+  // You can do whatever you like here to pick the title based on the route name
+  const headerTitle = routeName;
+
+  return {
+    headerTitle
+  };
+};
 
 const Router = createAppContainer(TabNavigator);
 

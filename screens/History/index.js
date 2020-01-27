@@ -1,35 +1,68 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, AsyncStorage, Button } from 'react-native';
-import { nameStorage } from '../../utils/configurations';
+import React, { useEffect, useState, useCallback } from 'react';
+import { SafeAreaView, RefreshControl, ScrollView } from 'react-native';
+import { ListItem } from 'react-native-elements';
 
-function History() {
+import store from '../../utils/store';
+
+function History({ navigation }) {
+  const [status, setStatus] = useState(false);
   const [datas, setDatas] = useState([]);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadDataStorage();
+    wait(2000).then(() => setRefreshing(false));
+  }, [refreshing]);
+
+  function wait(timeout) {
+    return new Promise(resolve => {
+      setTimeout(resolve, timeout);
+    });
+  }
+  useEffect(() => {
+    setStatus(true);
+  }, []);
 
   useEffect(() => {
     loadDataStorage();
-    console.log(new Date().toDateString());
-  }, []);
+  }, [status]);
 
   async function loadDataStorage() {
-    const items = await AsyncStorage.getItem(nameStorage);
+    const items = await store.get();
     if (items !== null) {
-      setDatas(JSON.parse(items));
+      setDatas(items);
     } else {
       setDatas([]);
     }
   }
 
-  async function handlerClearDataStorage() {
-    await AsyncStorage.removeItem(nameStorage);
-    await loadDataStorage();
-    alert('oi');
+  function handlerOnPressListView(value) {
+    navigation.navigate('Visualizar', { value: value });
   }
 
   return (
-    <View>
-      <Text>Oi: {datas.length}</Text>
-      <Button onPress={handlerClearDataStorage} title="Excluir" />
-    </View>
+    <SafeAreaView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {datas
+          .sort((a, b) => a.cep > b.cep)
+          .map((item, i) => (
+            <ListItem
+              key={i}
+              title={item.cep}
+              subtitle={`${item.localidade}/${item.uf}`}
+              leftIcon={{ name: item.icon }}
+              bottomDivider
+              chevron
+              onPress={() => handlerOnPressListView(item.cep)}
+            />
+          ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
